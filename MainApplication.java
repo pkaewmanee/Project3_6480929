@@ -64,7 +64,7 @@ class MainApplication extends JFrame {
             gameWindow.setVisible(true);
         });
     }
-    
+
 }
 
 class StartPanel extends JPanel {
@@ -386,24 +386,19 @@ class GamePanel extends JPanel implements Runnable, KeyListener, MouseListener {
     public void GameOver(Graphics g) {
         String End = "Game Over";
         String TotalScore = "Total Score: " + player.getScore();
-        JButton restartButton = new JButton("Restart");
-        restartButton.addActionListener(new ActionListener() {
-            private StartPanel startPanel;
+        stop();
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                stop();
-                reset();
-                currentFrame.startGame();
-            }
+        JButton restartButton = new JButton("Restart");
+        restartButton.addActionListener(e -> {
+            reset();
         });
         restartButton.setBounds(getWidth() / 2 - 50, getHeight() / 2 + 50, 100, 30);
-        add(restartButton); // add button to the panel
+        add(restartButton);
+
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.PLAIN, 40));
         g.drawString(End, getWidth() / 2 - 100, getHeight() / 2 - 50);
         g.drawString(TotalScore, getWidth() / 2 - 100, getHeight() / 2);
-        add(restartButton);
     }
 
     public void start() {
