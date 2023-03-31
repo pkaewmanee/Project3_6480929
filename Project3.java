@@ -4,7 +4,7 @@ Jawit Poopradit      6480087
 Phakkhapon Kaewmanee 6480929
 Possathorn Sujipisut 6480274
  */
-package Project3_6480279;
+package Project3_6480929;
 
 import java.util.*;
 import javax.swing.*;
@@ -25,7 +25,7 @@ class MainApplication extends JFrame {
     private GamePanel gamePanel;
     private MySoundEffect themeSound;
 
-    String path = "src/main/java/Project3_6480279/resources/";
+    String path = "src/main/java/Project3_6480929/resources/";
 
     public MainApplication() {
         setTitle("Journey To The Stars");
@@ -83,7 +83,7 @@ class StartPanel extends JPanel {
         this.gameWindow = gameWindow;
 
         try {
-            backgroundImage = ImageIO.read(new File("src/main/java/Project3_6480279/resources/background.png"));
+            backgroundImage = ImageIO.read(new File("src/main/java/Project3_6480929/resources/background.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -336,7 +336,7 @@ class GamePanel extends JPanel implements Runnable, KeyListener, MouseListener {
 
         setLayout(null);
         try {
-            background = ImageIO.read(new File("src/main/java/Project3_6480279/resources/background.png"));
+            background = ImageIO.read(new File("src/main/java/Project3_6480929/resources/background.png"));
         } catch (IOException e) {
             System.err.println(e);
         }
@@ -569,7 +569,7 @@ class Object extends JLabel {//parent class for all object in the game: player, 
     protected int health;
     protected int damage;
 
-    String path = "src/main/java/Project3_6480279/resources/";
+    String path = "src/main/java/Project3_6480929/resources/";
 
     public Object(int x, int y, int width, int height, int health, int damage) {
         this.x = x;
