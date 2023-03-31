@@ -54,8 +54,8 @@ class MainApplication extends JFrame {
         gamePanel.updateDifficulty(difficulty);
     }
 
-    public void updateHealthPower(int power) {
-        gamePanel.updateHealthPower(power);
+    public void updateHP(int power) {
+        gamePanel.updateHP(power);
     }
 
     public static void main(String[] args) {
@@ -64,6 +64,7 @@ class MainApplication extends JFrame {
             gameWindow.setVisible(true);
         });
     }
+    
 }
 
 class StartPanel extends JPanel {
@@ -110,7 +111,7 @@ class StartPanel extends JPanel {
         for (int i = 0; i < healthOptions.length; i++) {
             healthOptions[i] = new JRadioButton(String.format("%dx Health", 1 << i));
             healthOptions[i].setSelected(i == 0);
-            healthOptions[i].addActionListener(e -> gameWindow.updateHealthPower(getHealthPower()));
+            healthOptions[i].addActionListener(e -> gameWindow.updateHP(getHP()));
             healthGroup.add(healthOptions[i]);
         }
 
@@ -264,7 +265,7 @@ class StartPanel extends JPanel {
         }
     }
 
-    public void setHealthPower(int power) {
+    public void setHP(int power) {
         for (int i = 0; i < healthOptions.length; i++) {
             if ((1 << i) == power) {
                 healthOptions[i].setSelected(true);
@@ -273,7 +274,7 @@ class StartPanel extends JPanel {
         }
     }
 
-    public int getHealthPower() {
+    public int getHP() {
         int healthPower = 0;
         Enumeration<AbstractButton> buttons = healthGroup.getElements();
         while (buttons.hasMoreElements()) {
@@ -316,6 +317,7 @@ class GamePanel extends JPanel implements Runnable, KeyListener, MouseListener {
     private long lastEnemyShotTime;
     private GamePhysic gamephysics;
     private MainApplication currentFrame;
+    private JButton returnToMainMenuButton;
 
     private Image background;
 
@@ -323,16 +325,15 @@ class GamePanel extends JPanel implements Runnable, KeyListener, MouseListener {
         this.damageMultiplier = difficulty;
     }
 
-    public void updateHealthPower(int power) {
+    public void updateHP(int power) {
         this.healthMultiplier = power;
     }
 
     public GamePanel(MainApplication currentFrame) {
         this.startPanel = new StartPanel(currentFrame);
         this.currentFrame = currentFrame;
-        healthMultiplier = startPanel.getHealthPower();
+        healthMultiplier = startPanel.getHP();
         damageMultiplier = startPanel.getDifficulty();
-        System.out.print(healthMultiplier + " " + damageMultiplier);
         setPreferredSize(new Dimension(GAME_WIDTH, GAME_HEIGHT));
 
         setLayout(null);
@@ -352,13 +353,57 @@ class GamePanel extends JPanel implements Runnable, KeyListener, MouseListener {
         addMouseListener(this);
     }
 
-    public void VictoryRoyal(Graphics g) {
+    public void reset() {
+        // Reset player position and score
+        player.setX(GAME_WIDTH / 2 - 60);
+        player.setY(GAME_HEIGHT - 150);
+        player.setScore(0);
+
+        // Remove all enemies and projectiles
+        enemies.clear();
+        projectiles.clear();
+
+        // Reset last spawn and shot times
+        lastEnemySpawnTime = System.currentTimeMillis();
+        lastShotTime = System.currentTimeMillis();
+        lastEnemyShotTime = System.currentTimeMillis();
+
+        // Reset movement and shooting flags
+        moveleft = false;
+        moveright = false;
+        moveup = false;
+        movedown = false;
+        shoot = false;
+
+        // Reset game physics
+        gamephysics.reset();
+
+        // Reset health and damage multipliers
+        healthMultiplier = startPanel.getHP();
+        damageMultiplier = startPanel.getDifficulty();
+    }
+
+    public void GameOver(Graphics g) {
         String End = "Game Over";
         String TotalScore = "Total Score: " + player.getScore();
+        JButton restartButton = new JButton("Restart");
+        restartButton.addActionListener(new ActionListener() {
+            private StartPanel startPanel;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                stop();
+                reset();
+                currentFrame.startGame();
+            }
+        });
+        restartButton.setBounds(getWidth() / 2 - 50, getHeight() / 2 + 50, 100, 30);
+        add(restartButton); // add button to the panel
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.PLAIN, 40));
         g.drawString(End, getWidth() / 2 - 100, getHeight() / 2 - 50);
         g.drawString(TotalScore, getWidth() / 2 - 100, getHeight() / 2);
+        add(restartButton);
     }
 
     public void start() {
@@ -462,8 +507,8 @@ class GamePanel extends JPanel implements Runnable, KeyListener, MouseListener {
         g.drawImage(background, 0, 0, getWidth(), getHeight(), null);
         player.update();
         player.draw(g);
-        if (player.WhatMeLife() <= 0) {
-            VictoryRoyal(g);
+        if (player.getHealth() <= 0) {
+            GameOver(g);
             return;
         }
         for (Enemy enemy : enemies) {
@@ -581,11 +626,11 @@ class Object extends JLabel {//parent class for all object in the game: player, 
         this.damage = damage;
     }
 
-    public int WhatMeLife() {
+    public int getHealth() {
         return health;
     }
 
-    public void MeLifeIs(int health) {
+    public void setHealth(int health) {
         this.health = health;
     }
 
@@ -688,6 +733,21 @@ class Player extends Object {
     public void draw(Graphics g) { //Player picture, default for now
         g.drawImage(image.getImage(), x, y, 50, 50, parentFrame);
     }
+
+    public void setX(int x) {
+        this.x = x;
+        update();
+    }
+
+    public void setY(int y) {
+        this.y = y;
+        update();
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
 }
 
 class Enemy extends Object {
@@ -803,18 +863,22 @@ class Projectile extends Object { //Implement projectile here, maybe consider po
     }
 }
 
-class GamePhysic { //game physic will be in this class: projetile and enemy collision, enemy and player collision, etc.
+class GamePhysic { //game physic will be in this class: projectile and enemy collision, enemy and player collision, etc.
 
     private boolean GameOver;
 
     public void CheckForGameOver(Player player) {
-        if (player.WhatMeLife() <= 0) {
+        if (player.getHealth() <= 0) {
             GameOver = true;
         }
     }
 
     public boolean IsGameOver() {
         return GameOver;
+    }
+
+    public void reset() {
+        GameOver = false;
     }
 
     public void GamePhysicUpdate(Player player, java.util.List<Enemy> enemies, java.util.List<Projectile> projectiles) {
@@ -830,7 +894,7 @@ class GamePhysic { //game physic will be in this class: projetile and enemy coll
         Rectangle playerBounds = player.getBounds(); //Use rectangle to get the hitbox of player
         for (Enemy enemy : enemies) {
             if (playerBounds.intersects(enemy.getBounds())) { //This one detect if player rectangle intersects with enemy rectangle
-                player.MeLifeIs(player.WhatMeLife() - 10); //If they hit each other it will decreasees player hp by 10
+                player.setHealth(player.getHealth() - 10); //If they hit each other it will decrease player hp by 10
             }
         }
     }
@@ -839,7 +903,7 @@ class GamePhysic { //game physic will be in this class: projetile and enemy coll
         Rectangle playerBounds = player.getBounds();
         projectiles.removeIf(projectile -> { //this will make the bullet disappears once it hit a player
             if (projectile.getSpeed() < 0 && playerBounds.intersects(projectile.getBounds())) { //Check collision between player and bullet. projectile.getspeed() < 0 means the bullet is from enemy
-                player.MeLifeIs(player.WhatMeLife() - projectile.getDamage()); //If player rectangle intersects with enemy bullet rectangle, it will decreases player hp depending on enemy damage
+                player.setHealth(player.getHealth() - projectile.getDamage()); //If player rectangle intersects with enemy bullet rectangle, it will decreases player hp depending on enemy damage
                 return true; //remove projectile from list
             }
             return false;
@@ -852,8 +916,8 @@ class GamePhysic { //game physic will be in this class: projetile and enemy coll
                 Rectangle bulletBounds = projectile.getBounds();
                 for (Enemy enemy : enemies) {
                     if (bulletBounds.intersects(enemy.getBounds())) { //If projectile rectangle (from player) intersects with enemy rectangle, it will decrease enemy hp proportion to player damage
-                        enemy.MeLifeIs(enemy.WhatMeLife() - projectile.getDamage()); //Decrease enemy hp
-                        if (enemy.WhatMeLife() <= 0) { //If enemy hp is less than or equal to 0 it will delete the enemy
+                        enemy.setHealth(enemy.getHealth() - projectile.getDamage()); //Decrease enemy hp
+                        if (enemy.getHealth() <= 0) { //If enemy hp is less than or equal to 0 it will delete the enemy
                             enemies.remove(enemy);
                             player.IncreaseScore(10); //Increase player score whenever they kills an enemy
                         }
